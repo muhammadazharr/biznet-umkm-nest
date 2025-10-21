@@ -7,7 +7,7 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RolesQueryDto } from './dto/roles-query.dto';
-import { Role } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 
 type RoleWithPermissions = Role & {
   rolePermissions: {
@@ -75,11 +75,18 @@ export class RolesService {
   }
 
   async findAll(query: RolesQueryDto) {
-    const { page, limit } = query;
+    const { page, limit, search } = query;
     const skip = (page - 1) * limit;
+
+    const where: Prisma.RoleWhereInput = {};
+
+    if (search) {
+      where.OR = [{ name: { contains: search } }];
+    }
 
     const [roles, total] = await this.prismaService.$transaction([
       this.prismaService.role.findMany({
+        where,
         skip,
         take: limit,
         orderBy: { id: 'asc' },
