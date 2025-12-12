@@ -26,13 +26,6 @@ export class UsersService {
     private configService: ConfigService,
   ) {}
 
-  private _transformUsers(user: UserWithRoles) {
-    const { password, ...userWithoutPassword } = user;
-    const roles = user.userRole.map((ur) => ur.role.name);
-
-    return { ...userWithoutPassword, userRole: roles };
-  }
-
   async create(createUserDto: CreateUserDto) {
     const { roles, ...userData } = createUserDto;
 
@@ -140,10 +133,13 @@ export class UsersService {
       this.prismaService.user.count({ where }),
     ]);
 
-    const formattedUsers = users.map((user) => this._transformUsers(user));
+    const processedUsers = users.map((user) => ({
+      ...user,
+      userRole: user.userRole.map((userRoleItem) => userRoleItem.role),
+    }));
 
     return {
-      data: formattedUsers,
+      data: processedUsers,
       meta: {
         page,
         limit,
@@ -166,7 +162,7 @@ export class UsersService {
     if (!data) {
       throw new Error('Data client tidak ditemukan.');
     }
-    return this._transformUsers(data);
+    return data;
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {

@@ -7,22 +7,22 @@ import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-
+  console.log('Verifikasi URL Database:', process.env.DATABASE_URL);
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
       transformOptions: { enableImplicitConversion: true },
-    })
-  ); 
+    }),
+  );
 
   app.enableCors({
-    origin: 'http://localhost:5173', // <-- Ganti dengan alamat frontend React Anda
+    origin: 'http://localhost:5173',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
-  
+
   const config = new DocumentBuilder()
-    .setTitle('MojiesDev')
+    .setTitle('UMKM KTG')
     .setDescription('Dokumentasi API')
     .setVersion('1.0')
     .addBearerAuth(
@@ -37,7 +37,7 @@ async function bootstrap() {
       'JWT-auth',
     )
     .build();
-  
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
   app.useStaticAssets(join(__dirname, '..', 'public'));

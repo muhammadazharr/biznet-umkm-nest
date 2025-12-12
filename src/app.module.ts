@@ -8,12 +8,21 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesAndPermissionsGuard } from './auth/guards/roles-and-permissions.guard';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { EmailModule } from './email/email.module';
-import { ProfileModule } from './profile/profile.module';
 import { ServeStaticModule } from '@nestjs/serve-static'; // <-- 1. Impor ServeStaticModule
 import { join } from 'path';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
+import { TokoModule } from './toko/toko.module';
+import { PendaftarModule } from './pendaftar/pendaftar.module';
+import { PemilikTokoModule } from './pemilik-toko/pemilik-toko.module';
+import { FileUploadService } from './common/services/file-upload.services';
+import { KategoriModule } from './kategori/kategori.module';
+import { CabangModule } from './cabang/cabang.module';
+import { SosialMediaModule } from './sosial-media/sosial-media.module';
+import { FaqModule } from './faq/faq.module';
+import { ProdukModule } from './produk/produk.module';
+import { UlasanModule } from './ulasan/ulasan.module';
 
 @Module({
   imports: [
@@ -45,13 +54,22 @@ import { PermissionsModule } from './permissions/permissions.module';
     AuthModule,
     PrismaModule,
     EmailModule,
-    ProfileModule,
     UsersModule,
     RolesModule,
     PermissionsModule,
+    TokoModule,
+    PendaftarModule,
+    PemilikTokoModule,
+    KategoriModule,
+    CabangModule,
+    SosialMediaModule,
+    FaqModule,
+    ProdukModule,
+    UlasanModule,
   ],
   controllers: [],
   providers: [
+    FileUploadService,
     PrismaService,
     {
       provide: 'APP_GUARD',
@@ -62,5 +80,7 @@ import { PermissionsModule } from './permissions/permissions.module';
       useClass: RolesAndPermissionsGuard,
     },
   ],
+  
 })
+
 export class AppModule {}

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Toko" ALTER COLUMN "deskripsi" DROP NOT NULL,
+ALTER COLUMN "nomor_hp" DROP NOT NULL;

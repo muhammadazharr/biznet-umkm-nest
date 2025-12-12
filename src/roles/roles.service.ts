@@ -129,7 +129,7 @@ export class RolesService {
     return this._transformRole(role);
   }
 
-  update(id: number, updateRoleDto: UpdateRoleDto) {
+  async update(id: number, updateRoleDto: UpdateRoleDto) {
     const { name, permissions } = updateRoleDto;
     return this.prismaService.$transaction(async (prisma) => {
       const role = await prisma.role.update({

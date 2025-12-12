@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -56,10 +60,16 @@ export class PermissionsService {
     };
   }
 
-  findOne(id: number) {
-    return this.prismaService.permission.findUnique({
+  async findOne(id: number) {
+    const permission = await this.prismaService.permission.findUnique({
       where: { id },
     });
+
+    if (!permission) {
+      throw new NotFoundException('Permission tidak ditemukan.');
+    }
+
+    return permission;
   }
 
   async update(id: number, updatePermissionDto: UpdatePermissionDto) {
@@ -79,14 +89,7 @@ export class PermissionsService {
   }
 
   async remove(id: number) {
-    const permission = await this.prismaService.permission.findUnique({
-      where: { id },
-    });
-
-    if (!permission) {
-      throw new ConflictException('Permission tidak ditemukan.');
-    }
-
+    const permission = await this.findOne(id);
     await this.prismaService.permission.delete({
       where: { id },
     });

@@ -14,21 +14,54 @@ datasource db {
 }
 
 enum Status {
-  active
-  inactive
-  banned
+  aktif
+  nonaktif
+}
+
+enum StatusProduk {
+  tersedia
+  habis
+}
+
+enum StatusPendaftar {
+  menunggu
+  diterima
+  ditolak
+}
+
+enum KategoriEnum {
+  toko
+  produk
+}
+
+enum VisibilitasProduk {
+  tampilkan
+  sembunyikan
+}
+
+enum StatusToko {
+  aktif
+  nonaktif
+  ditangguhkan
+}
+
+enum StatusUlasan {
+  menunggu
+  terima
+  tolak
 }
 
 model User {
   id         Int       @id @default(autoincrement())
   email      String    @unique
-  username   String    @unique
+  username   String
+  photo      String?
   password   String?
   verifiedAt DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  profile           Profile?
+  pemilikToko       PemilikToko?
   userRole          UserRole[]
   activeTokens      ActiveToken[]
   verificationCodes VerificationCode?
@@ -90,13 +123,138 @@ model ActiveToken {
   token  String
 }
 
-model Profile {
-  id       Int     @id @default(autoincrement())
-  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId   Int     @unique
-  name     String
-  username String
-  bio      String?
-  photo    String  @default("default.png")
-  status   Status  @default(active)
+model PemilikToko {
+  id      Int     @id @default(autoincrement())
+  nama    String
+  jabatan String?
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  Int     @unique
+  toko    Toko    @relation(fields: [tokoId], references: [id], onDelete: Cascade)
+  tokoId  Int
+  status  Status  @default(aktif)
+}
+
+model Toko {
+  id        Int        @id @default(autoincrement())
+  nib       String
+  nama_toko String
+  slug      String     @unique
+  deskripsi String?
+  nomor_hp  String?
+  logo      String?
+  rating    Float?
+  status    StatusToko @default(aktif)
+  createdAt DateTime   @default(now())
+
+  PemilikToko  PemilikToko[]
+  KategoriToko KategoriToko[]
+  CabangToko   CabangToko[]
+  sosialMedias SosialMedia[]
+  faqs         Faq[]
+  produks      Produk[]
+}
+
+model Kategori {
+  id            Int          @id @default(autoincrement())
+  nama_kategori String
+  tipe          KategoriEnum
+  icon          String?
+
+  KategoriToko KategoriToko[]
+  produk       Produk[]
+}
+
+model KategoriToko {
+  id         Int      @id @default(autoincrement())
+  toko       Toko     @relation(fields: [tokoId], references: [id], onDelete: Cascade)
+  tokoId     Int
+  kategori   Kategori @relation(fields: [kategoriId], references: [id], onDelete: Cascade)
+  kategoriId Int
+}
+
+model CabangToko {
+  id            Int            @id @default(autoincrement())
+  toko          Toko           @relation(fields: [tokoId], references: [id], onDelete: Cascade)
+  tokoId        Int
+  nama_cabang   String
+  tipe          String         @default("primer")
+  alamat        String?
+  latitude      Float?
+  longitude     Float?
+  status        Status
+  createdAt     DateTime       @default(now())
+  produkCabangs ProdukCabang[]
+}
+
+model Pendaftar {
+  id           Int             @id @default(autoincrement())
+  nib          String
+  nama_pemilik String
+  nama_toko    String
+  email        String          @unique
+  status       StatusPendaftar
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+model SosialMedia {
+  id        Int      @id @default(autoincrement())
+  toko      Toko     @relation(fields: [tokoId], references: [id], onDelete: Cascade)
+  tokoId    Int
+  nama      String
+  url       String
+  tipe      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Faq {
+  id         Int      @id @default(autoincrement())
+  toko       Toko     @relation(fields: [tokoId], references: [id], onDelete: Cascade)
+  tokoId     Int
+  pertanyaan String
+  jawaban    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Produk {
+  id            Int               @id @default(autoincrement())
+  nama_produk   String
+  deskripsi     String?
+  slug          String            @unique
+  harga         Float
+  thumbnail     String?
+  toko          Toko              @relation(fields: [tokoId], references: [id], onDelete: Cascade)
+  tokoId        Int
+  kategori      Kategori?         @relation(fields: [kategoriId], references: [id], onDelete: Cascade)
+  kategoriId    Int?
+  status        VisibilitasProduk @default(tampilkan)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  produkCabangs ProdukCabang[]
+  ulasans       Ulasan[]
+}
+
+model ProdukCabang {
+  id        Int          @id @default(autoincrement())
+  produk    Produk       @relation(fields: [produkId], references: [id], onDelete: Cascade)
+  produkId  Int
+  cabang    CabangToko   @relation(fields: [cabangId], references: [id], onDelete: Cascade)
+  cabangId  Int
+  status    StatusProduk @default(tersedia)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model Ulasan {
+  id        Int          @id @default(autoincrement())
+  produk    Produk       @relation(fields: [produkId], references: [id], onDelete: Cascade)
+  produkId  Int
+  nama      String
+  nilai     Int
+  komentar  String?
+  status    StatusUlasan @default(menunggu)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 }
