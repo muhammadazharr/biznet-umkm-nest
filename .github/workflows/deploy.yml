@@ -19,5 +19,5 @@ jobs:
             git pull origin main
             npm install
             npm run build
-            # Menggunakan PM2 yang ada di aaPanel untuk restart
-            pm2 restart all || npm run start:prod
+            # Restart aplikasi yang sudah terdaftar
+            pm2 restart be-ecommerce
