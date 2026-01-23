@@ -16,19 +16,11 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: 'http://localhost:5173',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true,
-  });
-
-  app.enableCors({
-    origin: 'https://ecommerce-demo.adilasoma.cloud',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true,
-  });
-
-  app.enableCors({
-    origin: 'http://ecommerce-demo.adilasoma.cloud',
+    origin: [
+      'http://localhost:5173',
+      'https://ecommerce-demo.adilasoma.cloud',
+      'http://ecommerce-demo.adilasoma.cloud'
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
