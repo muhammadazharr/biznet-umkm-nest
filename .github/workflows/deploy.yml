@@ -1,0 +1,23 @@
+name: Deploy NestJS
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /www/wwwroot/be-ecommerce
+            git pull origin main
+            npm install
+            npm run build
+            # Menggunakan PM2 yang ada di aaPanel untuk restart
+            pm2 restart all || npm run start:prod

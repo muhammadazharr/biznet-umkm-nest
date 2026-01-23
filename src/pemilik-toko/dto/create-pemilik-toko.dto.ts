@@ -1,10 +1,16 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreatePemilikTokoDto {
   @ApiProperty({ example: 'admin@example.id', description: 'email' })
   @IsNotEmpty()
-  nama_pemilik: string;
+  nama: string;
 
   @ApiProperty({ example: 'admin@example.id', description: 'email' })
   @IsEmail({}, { message: 'email tidak valid' })
@@ -15,4 +21,9 @@ export class CreatePemilikTokoDto {
   @IsNotEmpty({ message: 'toko id tidak boleh kosong' })
   @IsNumber({}, { message: 'toko id harus berupa angka' })
   tokoId: number;
+
+  @ApiPropertyOptional({ example: 'owner', description: 'jabatan' })
+  @IsOptional()
+  @IsString({ message: 'jabatan harus berupa string' })
+  jabatan: string;
 }

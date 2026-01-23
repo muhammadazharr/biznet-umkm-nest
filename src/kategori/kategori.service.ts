@@ -74,9 +74,19 @@ export class KategoriService {
       this.prismaService.kategori.count(),
     ]);
 
-    return {
-      data: kategori,
-    };
+    return kategori;
+  }
+
+  async landingShow(id: number) {
+    const kategori = await this.prismaService.kategori.findUnique({
+      where: { id },
+    });
+
+    if (!kategori) {
+      throw new NotFoundException('Kategori tidak ditemukan.');
+    }
+
+    return kategori;
   }
 
   async findOne(id: number) {
@@ -85,7 +95,7 @@ export class KategoriService {
     });
 
     if (!kategori) {
-      return new NotFoundException('Kategori tidak ditemukan.');
+      throw new NotFoundException('Kategori tidak ditemukan.');
     }
 
     return kategori;

@@ -91,7 +91,7 @@ export class TokoController {
 
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  // @HasRoles('client')
+  @HasRoles('client')
   @Patch(':id/client')
   @UseInterceptors(
     FileInterceptor(

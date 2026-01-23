@@ -21,7 +21,7 @@ export class UlasanService {
   }
 
   async findAll(query: QueryUlasanDto) {
-    const { page, limit, search, produkId } = query; // Destructure semua properti
+    const { page, limit, search, produkId, tokoId } = query; // Destructure semua properti
     const skip = (page - 1) * limit;
 
     const where: Prisma.UlasanWhereInput = {};
@@ -36,12 +36,67 @@ export class UlasanService {
       where.produkId = produkId;
     }
 
+    if (tokoId) {
+      where.produk = {
+        tokoId,
+      };
+    }
+
     const [ulasan, total] = await this.prismaService.$transaction([
       this.prismaService.ulasan.findMany({
         where,
         skip,
+        orderBy: { createdAt: 'desc' },
         include: {
           produk: true,
+        },
+        take: limit,
+      }),
+
+      this.prismaService.ulasan.count({ where }),
+    ]);
+
+    return {
+      data: ulasan,
+      meta: {
+        page,
+        limit,
+        totalData: total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async landing(query: QueryUlasanDto) {
+    const { page, limit, search, produkId, tokoId } = query; // Destructure semua properti
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.UlasanWhereInput = {};
+
+    if (search) {
+      where.nama = {
+        contains: search,
+      };
+    }
+
+    if (tokoId) {
+      where.produk = {
+        tokoId,
+      };
+    }
+
+    where.produkId = produkId;
+    where.status = 'terima';
+
+    const [ulasan, total] = await this.prismaService.$transaction([
+      this.prismaService.ulasan.findMany({
+        where,
+        skip,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          produk: {
+            include: { toko: true },
+          },
         },
         take: limit,
       }),
@@ -63,6 +118,9 @@ export class UlasanService {
   async findOne(id: number) {
     const data = await this.prismaService.ulasan.findUnique({
       where: { id: id },
+      include: {
+        produk: true,
+      },
     });
 
     if (!data) {
@@ -72,11 +130,36 @@ export class UlasanService {
   }
 
   async update(id: number, updateUlasanDto: UpdateUlasanDto) {
-    this.findOne(id);
-    return this.prismaService.ulasan.update({
+    const ulasanExisting = await this.findOne(id);
+    await this.prismaService.ulasan.update({
       where: { id },
       data: { ...updateUlasanDto },
     });
+
+    if (updateUlasanDto.status === 'terima') {
+      const tokoId = ulasanExisting.produk.tokoId;
+
+      const aggregasi = await this.prismaService.ulasan.aggregate({
+        _avg: {
+          nilai: true,
+        },
+        where: {
+          status: 'terima',
+          produk: {
+            tokoId: tokoId,
+          },
+        },
+      });
+
+      const ratingBaru = aggregasi._avg.nilai || 0;
+
+      await this.prismaService.toko.update({
+        where: { id: tokoId },
+        data: {
+          rating: Math.round((aggregasi._avg.nilai || 0) * 10) / 10,
+        },
+      });
+    }
   }
 
   async remove(id: number) {

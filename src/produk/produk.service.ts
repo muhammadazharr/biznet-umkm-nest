@@ -111,6 +111,11 @@ export class ProdukService {
             },
           },
           toko: true,
+          _count: {
+            select: {
+              ulasans: true, // Nama relasi ulasan di schema.prisma Anda
+            },
+          },
         },
         take: limit,
         orderBy: { id: 'asc' },
@@ -118,8 +123,16 @@ export class ProdukService {
       this.prismaService.produk.count(),
     ]);
 
+    const formattedData = produk.map((item) => {
+      const { _count, ...rest } = item;
+      return {
+        ...rest,
+        totalUlasan: _count.ulasans,
+      };
+    });
+
     return {
-      data: produk,
+      data: formattedData,
       meta: {
         page,
         limit,
@@ -283,6 +296,10 @@ export class ProdukService {
         } catch (err) {
           console.error(`Failed to delete old photo: ${oldPhotoPath}`, err);
         }
+      }
+    } else {
+      if (produk.thumbnail) {
+        updateData.thumbnail = produk.thumbnail;
       }
     }
 

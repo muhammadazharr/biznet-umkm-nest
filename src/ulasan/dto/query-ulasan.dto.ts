@@ -11,4 +11,12 @@ export class QueryUlasanDto extends PaginationQueryDto {
   @Type(() => Number)
   @IsNumber({}, { message: 'produk id harus berupa angka' })
   produkId: number;
+
+  @ApiPropertyOptional({
+    description: 'Id toko',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'toko id harus berupa angka' })
+  tokoId: number;
 }

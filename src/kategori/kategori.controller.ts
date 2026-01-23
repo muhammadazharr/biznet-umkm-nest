@@ -63,6 +63,16 @@ export class KategoriController {
     );
   }
 
+  @Get('landing/:id')
+  @Public()
+  async landingShow(@Param('id') id: string) {
+    const result = await this.kategoriService.landingShow(+id);
+    return ApiResponse.successWithData(
+      'Data Kategori berhasil diambil',
+      result,
+    );
+  }
+
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')

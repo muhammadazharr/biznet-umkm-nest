@@ -20,9 +20,9 @@ export class CreateSosialMediaDto {
 
   @ApiProperty({ example: 'facebook', description: 'tipe sosial media' })
   @IsNotEmpty({ message: 'tipe sosial media tidak boleh kosong' })
-  @IsIn(['facebook', 'instagram', 'twitter', 'linkedin', 'youtube'], {
+  @IsIn(['facebook', 'instagram', 'twitter', 'tiktok', 'youtube'], {
     message:
-      'tipe harus berupa salah satu dari: facebook, instagram, twitter, linkedin, youtube',
+      'tipe harus berupa salah satu dari: facebook, instagram, twitter, tiktok, youtube',
   })
-  tipe: 'facebook' | 'instagram' | 'twitter' | 'linkedin' | 'youtube';
+  tipe: 'facebook' | 'instagram' | 'twitter' | 'tiktok' | 'youtube';
 }

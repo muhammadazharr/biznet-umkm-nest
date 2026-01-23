@@ -17,6 +17,29 @@ export class FaqService {
     return faq;
   }
 
+  async landing(query: QueryFaqDto) {
+    const { tokoId } = query;
+
+    const where: Prisma.FaqWhereInput = {};
+
+    if (tokoId) {
+      where.tokoId = tokoId;
+    }
+
+    const [faq, total] = await this.prismaService.$transaction([
+      this.prismaService.faq.findMany({
+        where,
+        include: {
+          toko: true,
+        },
+        orderBy: { id: 'asc' },
+      }),
+      this.prismaService.faq.count(),
+    ]);
+
+    return faq;
+  }
+
   async findAll(query: QueryFaqDto) {
     const { page, limit, search, tokoId } = query;
     const skip = (page - 1) * limit;

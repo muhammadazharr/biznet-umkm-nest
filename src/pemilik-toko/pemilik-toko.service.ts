@@ -27,7 +27,7 @@ export class PemilikTokoService {
     private configService: ConfigService,
   ) {}
   async create(createPemilikTokoDto: CreatePemilikTokoDto) {
-    const { email, nama_pemilik, tokoId } = createPemilikTokoDto;
+    const { email, nama, tokoId, jabatan } = createPemilikTokoDto;
 
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
@@ -54,17 +54,18 @@ export class PemilikTokoService {
         const createdUser = await prisma.user.create({
           data: {
             email,
-            username: nama_pemilik,
+            username: nama,
             password: hashedPassword,
           },
         });
 
         const createdPemilik = await prisma.pemilikToko.create({
           data: {
-            nama: nama_pemilik,
+            nama: nama,
             userId: createdUser.id,
             tokoId,
             status: 'aktif',
+            jabatan: jabatan ?? 'Owner',
           },
         });
 

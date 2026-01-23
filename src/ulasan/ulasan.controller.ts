@@ -41,6 +41,17 @@ export class UlasanController {
     );
   }
 
+  @Get('/landing')
+  @Public()
+  async landing(@Query() query: QueryUlasanDto) {
+    const result = await this.ulasanService.landing(query);
+    return ApiResponse.successWithPaginate(
+      'Data ulasan berhasil diambil',
+      result.data,
+      result.meta,
+    );
+  }
+
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
   @Get(':id')

@@ -16,6 +16,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { ApiResponse } from '@/common/helpers/api-response.helper';
 import { SosialMediaQueryDto } from './dto/query-sosial-media.dto';
+import { Public } from '@/auth/decorators/public.decorator';
 
 @Controller('api/sosial-media')
 export class SosialMediaController {
@@ -38,6 +39,16 @@ export class SosialMediaController {
       'Data sosial media berhasil diambil',
       result.data,
       result.meta,
+    );
+  }
+
+  @Get('landing')
+  @Public()
+  async landing(@Query() query: SosialMediaQueryDto) {
+    const result = await this.sosialMediaService.landing(query);
+    return ApiResponse.successWithData(
+      'Data sosial media berhasil diambil',
+      result,
     );
   }
 

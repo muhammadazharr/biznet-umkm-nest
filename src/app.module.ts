@@ -23,6 +23,7 @@ import { SosialMediaModule } from './sosial-media/sosial-media.module';
 import { FaqModule } from './faq/faq.module';
 import { ProdukModule } from './produk/produk.module';
 import { UlasanModule } from './ulasan/ulasan.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { UlasanModule } from './ulasan/ulasan.module';
     FaqModule,
     ProdukModule,
     UlasanModule,
+    DashboardModule,
   ],
   controllers: [],
   providers: [

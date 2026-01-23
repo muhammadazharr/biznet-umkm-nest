@@ -169,6 +169,15 @@ export class PendaftarService {
           },
         });
 
+        const cabang = await prisma.cabangToko.create({
+          data: {
+            nama_cabang: pendaftar.nama_toko,
+            tokoId: toko.id,
+            tipe: 'primer',
+            status: 'aktif',
+          },
+        });
+
         await prisma.pemilikToko.create({
           data: {
             nama: pendaftar.nama_pemilik,

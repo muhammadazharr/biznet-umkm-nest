@@ -16,6 +16,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { ApiResponse } from '@/common/helpers/api-response.helper';
 import { QueryFaqDto } from './dto/query-faq.dto';
+import { Public } from '@/auth/decorators/public.decorator';
 
 @Controller('api/faq')
 export class FaqController {
@@ -39,6 +40,13 @@ export class FaqController {
       result.data,
       result.meta,
     );
+  }
+
+  @Get('landing')
+  @Public()
+  async landing(@Query() query: QueryFaqDto) {
+    const result = await this.faqService.landing(query);
+    return ApiResponse.successWithData('Data Faq berhasil diambil', result);
   }
 
   @Get(':id')

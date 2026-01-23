@@ -60,6 +60,25 @@ export class SosialMediaService {
     };
   }
 
+  async landing(query: SosialMediaQueryDto) {
+    const { tokoId } = query;
+
+    const where: Prisma.SosialMediaWhereInput = {};
+
+    if (tokoId) {
+      where.tokoId = tokoId;
+    }
+
+    const sosials = await this.prismaService.sosialMedia.findMany({
+      where,
+      include: {
+        toko: true,
+      },
+    });
+
+    return sosials;
+  }
+
   async findOne(id: number) {
     const data = await this.prismaService.sosialMedia.findUnique({
       where: { id: id },
