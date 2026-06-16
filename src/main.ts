@@ -7,7 +7,17 @@ import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  console.log('Verifikasi URL Database:', process.env.DATABASE_URL);
+  app.set('trust proxy', 1);
+
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      console.log(`[${req.method}] ${req.url} - ${res.statusCode} (${Date.now() - start}ms) - Size: ${res.get('Content-Length') || 0}`);
+    });
+    next();
+  });
+
+  
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -15,12 +25,31 @@ async function bootstrap() {
     }),
   );
 
+  const defaultOrigins = [
+    'http://localhost:5173',
+    'https://ecommerce-demo.adilasoma.cloud',
+    'http://ecommerce-demo.adilasoma.cloud',
+    'https://inbiz.azhr.cloud',
+    'http://inbiz.azhr.cloud',
+    'https://api-inbiz.azhr.cloud',
+    'http://api-inbiz.azhr.cloud',
+    'https://dev-inbiz.azhr.cloud',
+    'https://api-dev-inbiz.azhr.cloud',
+  ];
+
+  let origins: (string | RegExp)[] = [...defaultOrigins];
+
+  if (process.env.CORS_ORIGINS) {
+    const extraOrigins = process.env.CORS_ORIGINS.split(',')
+      .map((o) => o.trim().replace(/^["']|["']$/g, '')) // Hapus tanda kutip jika ada
+      .filter((o) => o.length > 0);
+    origins = [...new Set([...origins, ...extraOrigins])];
+  }
+
+  console.log('Final Allowed CORS Origins:', origins);
+
   app.enableCors({
-    origin: [
-      'http://localhost:5173',
-      'https://ecommerce-demo.adilasoma.cloud',
-      'http://ecommerce-demo.adilasoma.cloud'
-    ],
+    origin: origins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
@@ -44,7 +73,8 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
-  app.useStaticAssets(join(__dirname, '..', 'public'));
+  const publicPath = join(process.cwd(), 'public');
+  app.useStaticAssets(publicPath);
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
