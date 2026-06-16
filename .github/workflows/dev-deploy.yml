@@ -2,14 +2,25 @@ name: Deploy Backend Dev to Homeserver (Self-Hosted)
 on:
   push:
     branches: [ dev ]
+
+# Suppress Node.js 20 deprecation warnings
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy:
     runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        
+      - name: Create .env.dev from Secrets
+        run: |
+          echo "${{ secrets.ENV_DEV }}" > .env.dev
+          
       - name: Build and Restart Container
         run: |
           docker compose -f docker-compose.dev.yml up -d --build
+          
       - name: Cleanup old images
         run: docker image prune -f
