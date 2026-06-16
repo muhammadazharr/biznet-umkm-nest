@@ -24,6 +24,9 @@ jobs:
           
       - name: Build and Restart Container
         run: |
+          # Force remove existing container to avoid name conflicts
+          docker stop umkm-backend-dev || true
+          docker rm umkm-backend-dev || true
           docker compose -f docker-compose.dev.yml up -d --build --remove-orphans
           
       - name: Cleanup old images
