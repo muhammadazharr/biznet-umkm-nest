@@ -27,7 +27,7 @@ async function bootstrap() {
   );
 
   const origins = process.env.CORS_ORIGINS 
-    ? process.env.CORS_ORIGINS.split(',') 
+    ? process.env.CORS_ORIGINS.split(',').map(o => o.trim()) 
     : [
         'http://localhost:5173',
         'https://ecommerce-demo.adilasoma.cloud',
@@ -37,6 +37,8 @@ async function bootstrap() {
         'https://api-inbiz.azhr.cloud',
         'http://api-inbiz.azhr.cloud'
       ];
+  
+  console.log('Allowed CORS Origins:', origins);
 
   app.enableCors({
     origin: origins,
