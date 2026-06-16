@@ -7,7 +7,18 @@ import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.set('trust proxy', 1);
+
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      console.log(`[${req.method}] ${req.url} - ${res.statusCode} (${Date.now() - start}ms) - Size: ${res.get('Content-Length') || 0}`);
+    });
+    next();
+  });
+
   console.log('Verifikasi URL Database:', process.env.DATABASE_URL);
+  
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -15,12 +26,20 @@ async function bootstrap() {
     }),
   );
 
+  const origins = process.env.CORS_ORIGINS 
+    ? process.env.CORS_ORIGINS.split(',') 
+    : [
+        'http://localhost:5173',
+        'https://ecommerce-demo.adilasoma.cloud',
+        'http://ecommerce-demo.adilasoma.cloud',
+        'https://inbiz.azhr.cloud',
+        'http://inbiz.azhr.cloud',
+        'https://api-inbiz.azhr.cloud',
+        'http://api-inbiz.azhr.cloud'
+      ];
+
   app.enableCors({
-    origin: [
-      'http://localhost:5173',
-      'https://ecommerce-demo.adilasoma.cloud',
-      'http://ecommerce-demo.adilasoma.cloud'
-    ],
+    origin: origins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
@@ -44,7 +63,8 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
-  app.useStaticAssets(join(__dirname, '..', 'public'));
+  const publicPath = join(process.cwd(), 'public');
+  app.useStaticAssets(publicPath);
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

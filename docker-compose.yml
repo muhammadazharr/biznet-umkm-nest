@@ -1,0 +1,22 @@
+services:
+  umkm-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: umkm-backend
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    networks:
+      - proxy_network
+      - db-internal
+
+networks:
+  proxy_network:
+    external: true
+  db-internal:
+    external: true
