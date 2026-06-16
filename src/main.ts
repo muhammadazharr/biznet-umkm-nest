@@ -17,7 +17,6 @@ async function bootstrap() {
     next();
   });
 
-  console.log('Verifikasi URL Database:', process.env.DATABASE_URL);
   
   app.useGlobalPipes(
     new ValidationPipe({
@@ -26,19 +25,28 @@ async function bootstrap() {
     }),
   );
 
-  const origins = process.env.CORS_ORIGINS 
-    ? process.env.CORS_ORIGINS.split(',').map(o => o.trim()) 
-    : [
-        'http://localhost:5173',
-        'https://ecommerce-demo.adilasoma.cloud',
-        'http://ecommerce-demo.adilasoma.cloud',
-        'https://inbiz.azhr.cloud',
-        'http://inbiz.azhr.cloud',
-        'https://api-inbiz.azhr.cloud',
-        'http://api-inbiz.azhr.cloud'
-      ];
-  
-  console.log('Allowed CORS Origins:', origins);
+  const defaultOrigins = [
+    'http://localhost:5173',
+    'https://ecommerce-demo.adilasoma.cloud',
+    'http://ecommerce-demo.adilasoma.cloud',
+    'https://inbiz.azhr.cloud',
+    'http://inbiz.azhr.cloud',
+    'https://api-inbiz.azhr.cloud',
+    'http://api-inbiz.azhr.cloud',
+    'https://dev-inbiz.azhr.cloud',
+    'https://api-dev-inbiz.azhr.cloud',
+  ];
+
+  let origins: (string | RegExp)[] = [...defaultOrigins];
+
+  if (process.env.CORS_ORIGINS) {
+    const extraOrigins = process.env.CORS_ORIGINS.split(',')
+      .map((o) => o.trim().replace(/^["']|["']$/g, '')) // Hapus tanda kutip jika ada
+      .filter((o) => o.length > 0);
+    origins = [...new Set([...origins, ...extraOrigins])];
+  }
+
+  console.log('Final Allowed CORS Origins:', origins);
 
   app.enableCors({
     origin: origins,
