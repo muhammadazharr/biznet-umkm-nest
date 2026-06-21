@@ -115,7 +115,7 @@ export class PendaftarService {
 
     if (status === 'diterima') {
       const year = new Date().getFullYear();
-      const rawPassword = `${pendaftar.nib}${year}`;
+      const rawPassword = `12345678`;
       const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
       let slug = pendaftar.nama_toko.toLowerCase().replace(/\s/g, '-');

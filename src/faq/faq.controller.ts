@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  Req,
 } from '@nestjs/common';
 import { FaqService } from './faq.service';
 import { CreateFaqDto } from './dto/create-faq.dto';
@@ -25,16 +26,16 @@ export class FaqController {
   @Post()
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  async create(@Body() createFaqDto: CreateFaqDto) {
-    await this.faqService.create(createFaqDto);
+  async create(@Body() createFaqDto: CreateFaqDto, @Req() req: any) {
+    await this.faqService.create(createFaqDto, req.user);
     return ApiResponse.success('Faq berhasil dibuat');
   }
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  async findAll(@Query() query: QueryFaqDto) {
-    const result = await this.faqService.findAll(query);
+  async findAll(@Query() query: QueryFaqDto, @Req() req: any) {
+    const result = await this.faqService.findAll(query, req.user);
     return ApiResponse.successWithPaginate(
       'Data Faq berhasil diambil',
       result.data,
@@ -52,24 +53,29 @@ export class FaqController {
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  async findOne(@Param('id') id: string) {
-    const result = await this.faqService.findOne(+id);
+  async findOne(@Param('id') id: string, @Req() req: any) {
+    const result = await this.faqService.findOne(+id, req.user);
     return ApiResponse.successWithData('Data Faq berhasil diambil', result);
   }
 
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  async update(@Param('id') id: string, @Body() updateFaqDto: UpdateFaqDto) {
-    await this.faqService.update(+id, updateFaqDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateFaqDto: UpdateFaqDto,
+    @Req() req: any,
+  ) {
+    await this.faqService.update(+id, updateFaqDto, req.user);
     return ApiResponse.success('Data Faq berhasil diperbarui');
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  async remove(@Param('id') id: string) {
-    await this.faqService.remove(+id);
+  async remove(@Param('id') id: string, @Req() req: any) {
+    await this.faqService.remove(+id, req.user);
     return ApiResponse.success('Data Faq berhasil dihapus');
   }
 }
+

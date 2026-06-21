@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CreateFaqDto } from './dto/create-faq.dto';
 import { UpdateFaqDto } from './dto/update-faq.dto';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -9,7 +9,24 @@ import { Prisma } from '@prisma/client';
 export class FaqService {
   constructor(private prismaService: PrismaService) {}
 
-  async create(createFaqDto: CreateFaqDto) {
+  private async getTokoIdForUser(user: any): Promise<number | null> {
+    if (user && user.roles && !Array.isArray(user.roles) && user.roles.name === 'client') {
+      const pemilikToko = await this.prismaService.pemilikToko.findUnique({
+        where: { userId: user.id },
+      });
+      if (!pemilikToko) {
+        throw new ForbiddenException('Toko Anda tidak ditemukan atau Anda bukan pemilik toko.');
+      }
+      return pemilikToko.tokoId;
+    }
+    return null;
+  }
+
+  async create(createFaqDto: CreateFaqDto, user?: any) {
+    const clientTokoId = await this.getTokoIdForUser(user);
+    if (clientTokoId !== null) {
+      createFaqDto.tokoId = clientTokoId;
+    }
     const faq = await this.prismaService.faq.create({
       data: { ...createFaqDto },
     });
@@ -34,24 +51,27 @@ export class FaqService {
         },
         orderBy: { id: 'asc' },
       }),
-      this.prismaService.faq.count(),
+      this.prismaService.faq.count({ where }),
     ]);
 
     return faq;
   }
 
-  async findAll(query: QueryFaqDto) {
+  async findAll(query: QueryFaqDto, user?: any) {
     const { page, limit, search, tokoId } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.FaqWhereInput = {};
 
-    if (search) {
-      where.OR = [{ pertanyaan: { contains: search } }];
+    const clientTokoId = await this.getTokoIdForUser(user);
+    if (clientTokoId !== null) {
+      where.tokoId = clientTokoId;
+    } else if (tokoId) {
+      where.tokoId = tokoId;
     }
 
-    if (tokoId) {
-      where.tokoId = tokoId;
+    if (search) {
+      where.OR = [{ pertanyaan: { contains: search } }];
     }
 
     const [faq, total] = await this.prismaService.$transaction([
@@ -64,7 +84,7 @@ export class FaqService {
         take: limit,
         orderBy: { id: 'asc' },
       }),
-      this.prismaService.faq.count(),
+      this.prismaService.faq.count({ where }),
     ]);
 
     return {
@@ -78,7 +98,7 @@ export class FaqService {
     };
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, user?: any) {
     const faq = await this.prismaService.faq.findUnique({
       include: {
         toko: true,
@@ -87,21 +107,33 @@ export class FaqService {
     });
 
     if (!faq) {
-      return new NotFoundException('Faq tidak ditemukan.');
+      throw new NotFoundException('Faq tidak ditemukan.');
+    }
+
+    const clientTokoId = await this.getTokoIdForUser(user);
+    if (clientTokoId !== null && faq.tokoId !== clientTokoId) {
+      throw new ForbiddenException('Anda tidak memiliki akses ke FAQ ini.');
     }
 
     return faq;
   }
 
-  async update(id: number, updateFaqDto: UpdateFaqDto) {
+  async update(id: number, updateFaqDto: UpdateFaqDto, user?: any) {
+    await this.findOne(id, user);
+
+    const clientTokoId = await this.getTokoIdForUser(user);
+    if (clientTokoId !== null) {
+      updateFaqDto.tokoId = clientTokoId;
+    }
+
     await this.prismaService.faq.update({
       where: { id },
       data: updateFaqDto,
     });
   }
 
-  async remove(id: number) {
-    const data = await this.findOne(id);
+  async remove(id: number, user?: any) {
+    await this.findOne(id, user);
 
     await this.prismaService.faq.delete({
       where: { id },

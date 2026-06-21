@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  Req,
 } from '@nestjs/common';
 import { CabangService } from './cabang.service';
 import { CreateCabangDto } from './dto/create-cabang.dto';
@@ -24,16 +25,16 @@ export class CabangController {
   @Post()
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  async create(@Body() createCabangDto: CreateCabangDto) {
-    await this.cabangService.create(createCabangDto);
+  async create(@Body() createCabangDto: CreateCabangDto, @Req() req: any) {
+    await this.cabangService.create(createCabangDto, req.user);
     return ApiResponse.success('Cabang berhasil dibuat');
   }
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  async findAll(@Query() query: CabangQueryDto) {
-    const result = await this.cabangService.findAll(query);
+  async findAll(@Query() query: CabangQueryDto, @Req() req: any) {
+    const result = await this.cabangService.findAll(query, req.user);
     return ApiResponse.successWithPaginate(
       'Data Cabang berhasil diambil',
       result.data,
@@ -44,8 +45,8 @@ export class CabangController {
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  async findOne(@Param('id') id: string) {
-    const result = await this.cabangService.findOne(+id);
+  async findOne(@Param('id') id: string, @Req() req: any) {
+    const result = await this.cabangService.findOne(+id, req.user);
     return ApiResponse.successWithData('Data Cabang berhasil diambil', result);
   }
 
@@ -55,16 +56,18 @@ export class CabangController {
   async update(
     @Param('id') id: string,
     @Body() updateCabangDto: UpdateCabangDto,
+    @Req() req: any,
   ) {
-    await this.cabangService.update(+id, updateCabangDto);
+    await this.cabangService.update(+id, updateCabangDto, req.user);
     return ApiResponse.success('Data Cabang berhasil diperbarui');
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  async remove(@Param('id') id: string) {
-    await this.cabangService.remove(+id);
+  async remove(@Param('id') id: string, @Req() req: any) {
+    await this.cabangService.remove(+id, req.user);
     return ApiResponse.success('Data Cabang berhasil dihapus');
   }
 }
+

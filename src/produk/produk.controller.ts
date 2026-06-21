@@ -10,6 +10,7 @@ import {
   Query,
   UploadedFile,
   UseInterceptors,
+  Req,
 } from '@nestjs/common';
 import { ProdukService } from './produk.service';
 import { CreateProdukDto } from './dto/create-produk.dto';
@@ -38,16 +39,17 @@ export class ProdukController {
   async create(
     @Body() createProdukDto: CreateProdukDto,
     @UploadedFile() thumbnail: Express.Multer.File,
+    @Req() req: any,
   ) {
-    await this.produkService.create(createProdukDto, thumbnail);
+    await this.produkService.create(createProdukDto, thumbnail, req.user);
     return ApiResponse.success('Produk berhasil dibuat');
   }
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  async findAll(@Query() query: QueryProdukDto) {
-    const result = await this.produkService.findAll(query);
+  async findAll(@Query() query: QueryProdukDto, @Req() req: any) {
+    const result = await this.produkService.findAll(query, req.user);
     return ApiResponse.successWithPaginate(
       'Data Produk berhasil diambil',
       result.data,
@@ -69,8 +71,8 @@ export class ProdukController {
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  async findOne(@Param('id') id: string) {
-    const result = await this.produkService.findOne(+id);
+  async findOne(@Param('id') id: string, @Req() req: any) {
+    const result = await this.produkService.findOne(+id, req.user);
     return ApiResponse.successWithData('Data Produk berhasil diambil', result);
   }
 
@@ -94,16 +96,18 @@ export class ProdukController {
     @Param('id') id: string,
     @Body() updateProdukDto: UpdateProdukDto,
     @UploadedFile() thumbnail: Express.Multer.File,
+    @Req() req: any,
   ) {
-    await this.produkService.update(+id, updateProdukDto, thumbnail);
+    await this.produkService.update(+id, updateProdukDto, thumbnail, req.user);
     return ApiResponse.success('Data Produk berhasil diperbarui');
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
-  async remove(@Param('id') id: string) {
-    await this.produkService.remove(+id);
+  async remove(@Param('id') id: string, @Req() req: any) {
+    await this.produkService.remove(+id, req.user);
     return ApiResponse.success('Data Produk berhasil dihapus');
   }
 }
+

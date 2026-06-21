@@ -1,7 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { VisibilitasProduk } from '@prisma/client';
-import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { VisibilitasProduk, StatusProduk } from '@prisma/client';
+import { Transform, Type } from 'class-transformer';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsArray, ValidateNested, IsEnum } from 'class-validator';
+
+export class CabangStatusDto {
+  @ApiProperty({ example: 1, description: 'Id Cabang' })
+  @IsNotEmpty({ message: 'cabang id tidak boleh kosong' })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'cabang id harus berupa angka' })
+  cabangId: number;
+
+  @ApiProperty({ example: 'tersedia', description: 'Status Stok' })
+  @IsNotEmpty({ message: 'status stok tidak boleh kosong' })
+  @IsEnum(StatusProduk, { message: 'status stok tidak valid' })
+  status: StatusProduk;
+}
 
 export class CreateProdukDto {
   @ApiProperty({ example: 'Produk A', description: 'Nama Produk' })
@@ -25,19 +38,25 @@ export class CreateProdukDto {
   @IsNumber({}, { message: 'kategori id harus berupa angka' })
   kategoriId: number;
 
-  @ApiProperty({ example: [1, 2], description: 'Daftar Cabang Id' })
-  @IsNotEmpty({ message: 'cabang ids tidak boleh kosong' })
+  @ApiProperty({
+    example: '[{"cabangId": 1, "status": "tersedia"}]',
+    description: 'Daftar Cabang dan Status Stok (JSON string atau array)',
+  })
+  @IsNotEmpty({ message: 'cabang data tidak boleh kosong' })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
-      return [parseInt(value.trim(), 10)];
+      try {
+        return JSON.parse(value);
+      } catch (e) {
+        return value;
+      }
     }
-    if (Array.isArray(value)) {
-      return value.map((v) => parseInt(v.toString().trim(), 10));
-    }
-    return [parseInt(value, 10)];
+    return value;
   })
-  @IsNumber({}, { each: true, message: 'cabang ids harus berupa angka' })
-  cabangIds: number[];
+  @IsArray({ message: 'cabang data harus berupa array' })
+  @ValidateNested({ each: true })
+  @Type(() => CabangStatusDto)
+  cabangData: CabangStatusDto[];
 
   @ApiProperty({
     example: 'http://example.com/image.jpg',
@@ -49,4 +68,20 @@ export class CreateProdukDto {
   @IsOptional()
   @IsString({ message: 'status harus berupa string' })
   status: VisibilitasProduk;
+
+  @ApiProperty({ example: [1, 2], description: 'Daftar Hashtag Id', required: false })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (!value) return [];
+    if (typeof value === 'string') {
+      if (value.trim() === '') return [];
+      return [parseInt(value.trim(), 10)];
+    }
+    if (Array.isArray(value)) {
+      return value.map((v) => parseInt(v.toString().trim(), 10));
+    }
+    return [parseInt(value, 10)];
+  })
+  @IsNumber({}, { each: true, message: 'hashtag ids harus berupa angka' })
+  hashtagIds?: number[];
 }

@@ -24,6 +24,7 @@ import { FaqModule } from './faq/faq.module';
 import { ProdukModule } from './produk/produk.module';
 import { UlasanModule } from './ulasan/ulasan.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { HashtagModule } from './hashtag/hashtag.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     ProdukModule,
     UlasanModule,
     DashboardModule,
+    HashtagModule,
   ],
   controllers: [],
   providers: [
