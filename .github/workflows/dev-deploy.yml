@@ -1,7 +1,7 @@
 name: Deploy Backend Dev to Homeserver (Self-Hosted)
 on:
   push:
-    branches: [ dev ]
+    branches: [ dev, main ]
 
 # Suppress Node.js 20 deprecation warnings
 env:
