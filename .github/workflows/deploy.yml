@@ -1,23 +1,32 @@
-name: Deploy NestJS
+name: Deploy Backend to Homeserver (Self-Hosted)
 
 on:
   push:
     branches: [ main ]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - name: SSH and Deploy
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd /www/wwwroot/be-ecommerce
-            git pull origin main
-            npm install
-            npm run build
-            # Restart aplikasi yang sudah terdaftar
-            pm2 restart be-ecommerce
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env from Secrets
+        run: |
+          cat <<EOF > .env
+          ${{ secrets.ENV_PRODUCTION }}
+          EOF
+          echo "Keys found in .env:"
+          grep -o '^[A-Z0-9_]*=' .env | cut -d= -f1
+
+      - name: Build and Restart Container
+        run: |
+          docker stop umkm-backend || true
+          docker rm umkm-backend || true
+          docker compose up -d --build --remove-orphans
+
+      - name: Cleanup old images
+        run: docker image prune -f
