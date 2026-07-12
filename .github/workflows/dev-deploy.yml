@@ -1,0 +1,33 @@
+name: Deploy Backend Dev to Homeserver (Self-Hosted)
+on:
+  push:
+    branches: [ dev, main ]
+
+# Suppress Node.js 20 deprecation warnings
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Create .env.dev from Secrets
+        run: |
+          cat <<EOF > .env.dev
+          ${{ secrets.ENV_DEV }}
+          EOF
+          echo "Keys found in .env.dev:"
+          grep -o '^[A-Z0-9_]*=' .env.dev | cut -d= -f1
+          
+      - name: Build and Restart Container
+        run: |
+          # Force remove existing container to avoid name conflicts
+          docker stop umkm-backend-dev || true
+          docker rm umkm-backend-dev || true
+          docker compose -f docker-compose.dev.yml up -d --build --remove-orphans
+          
+      - name: Cleanup old images
+        run: docker image prune -f
