@@ -153,6 +153,7 @@ model Toko {
   faqs         Faq[]
   produks      Produk[]
   hashtags     Hashtag[]
+  keranjangs   Keranjang[]
 }
 
 model Kategori {
@@ -236,6 +237,7 @@ model Produk {
   produkCabangs ProdukCabang[]
   ulasans       Ulasan[]
   hashtags      ProdukHashtag[]
+  keranjangs    Keranjang[]
 }
 
 model ProdukCabang {
@@ -283,4 +285,19 @@ model ProdukHashtag {
   createdAt DateTime @default(now())
 
   @@unique([produkId, hashtagId])
+}
+
+model Keranjang {
+  id             Int       @id @default(autoincrement())
+  ipAdress       String?
+  tokenSession   String?
+  sessionExpired DateTime?
+  toko           Toko      @relation(fields: [tokoId], references: [id], onDelete: Cascade)
+  tokoId         Int
+  produk         Produk    @relation(fields: [produkId], references: [id], onDelete: Cascade)
+  produkId       Int
+  totalHarga     Int
+  quantiti       Int
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
