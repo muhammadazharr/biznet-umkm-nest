@@ -9,6 +9,7 @@ import { RolesAndPermissionsGuard } from './auth/guards/roles-and-permissions.gu
 import { MailerModule } from '@nestjs-modules/mailer';
 import { EmailModule } from './email/email.module';
 import { ServeStaticModule } from '@nestjs/serve-static'; // <-- 1. Impor ServeStaticModule
+import { ScheduleModule } from '@nestjs/schedule';
 import { join } from 'path';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
@@ -24,6 +25,8 @@ import { FaqModule } from './faq/faq.module';
 import { ProdukModule } from './produk/produk.module';
 import { UlasanModule } from './ulasan/ulasan.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { HashtagModule } from './hashtag/hashtag.module';
+import { KeranjangModule } from './keranjang/keranjang.module';
 
 @Module({
   imports: [
@@ -52,6 +55,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
       rootPath: join(process.cwd(), 'public'),
       serveRoot: '/',
     }),
+    ScheduleModule.forRoot(),
     AuthModule,
     PrismaModule,
     EmailModule,
@@ -68,6 +72,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
     ProdukModule,
     UlasanModule,
     DashboardModule,
+    HashtagModule,
+    KeranjangModule,
   ],
   controllers: [],
   providers: [

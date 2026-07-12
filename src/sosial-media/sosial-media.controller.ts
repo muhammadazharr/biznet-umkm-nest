@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  Req,
 } from '@nestjs/common';
 import { SosialMediaService } from './sosial-media.service';
 import { CreateSosialMediaDto } from './dto/create-sosial-media.dto';
@@ -25,16 +26,16 @@ export class SosialMediaController {
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
   @Post()
-  async create(@Body() createSosialMediaDto: CreateSosialMediaDto) {
-    await this.sosialMediaService.create(createSosialMediaDto);
+  async create(@Body() createSosialMediaDto: CreateSosialMediaDto, @Req() req: any) {
+    await this.sosialMediaService.create(createSosialMediaDto, req.user);
     return ApiResponse.success('sosial media berhasil dibuat');
   }
 
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
   @Get()
-  async findAll(@Query() query: SosialMediaQueryDto) {
-    const result = await this.sosialMediaService.findAll(query);
+  async findAll(@Query() query: SosialMediaQueryDto, @Req() req: any) {
+    const result = await this.sosialMediaService.findAll(query, req.user);
     return ApiResponse.successWithPaginate(
       'Data sosial media berhasil diambil',
       result.data,
@@ -55,8 +56,8 @@ export class SosialMediaController {
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const result = await this.sosialMediaService.findOne(+id);
+  async findOne(@Param('id') id: string, @Req() req: any) {
+    const result = await this.sosialMediaService.findOne(+id, req.user);
     return ApiResponse.successWithData(
       'Data sosial media berhasil diambil',
       result,
@@ -69,16 +70,18 @@ export class SosialMediaController {
   async update(
     @Param('id') id: string,
     @Body() updateSosialMediaDto: UpdateSosialMediaDto,
+    @Req() req: any,
   ) {
-    await this.sosialMediaService.update(+id, updateSosialMediaDto);
+    await this.sosialMediaService.update(+id, updateSosialMediaDto, req.user);
     return ApiResponse.success('Data sosial media berhasil diperbarui');
   }
 
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth('JWT-auth')
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    await this.sosialMediaService.remove(+id);
+  async remove(@Param('id') id: string, @Req() req: any) {
+    await this.sosialMediaService.remove(+id, req.user);
     return ApiResponse.success('Data sosial media berhasil dihapus');
   }
 }
+

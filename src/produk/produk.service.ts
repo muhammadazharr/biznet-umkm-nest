@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CreateProdukDto } from './dto/create-produk.dto';
 import { UpdateProdukDto } from './dto/update-produk.dto';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -11,14 +11,48 @@ import { join } from 'path';
 export class ProdukService {
   constructor(private prismaService: PrismaService) {}
 
+  private async getTokoIdForUser(user: any): Promise<number | null> {
+    if (user && user.roles && !Array.isArray(user.roles) && user.roles.name === 'client') {
+      const pemilikToko = await this.prismaService.pemilikToko.findUnique({
+        where: { userId: user.id },
+      });
+      if (!pemilikToko) {
+        throw new ForbiddenException('Toko Anda tidak ditemukan atau Anda bukan pemilik toko.');
+      }
+      return pemilikToko.tokoId;
+    }
+    return null;
+  }
+
+  private async validateClientCabang(clientTokoId: number, cabangData: any[]) {
+    const ownedCabangs = await this.prismaService.cabangToko.findMany({
+      where: { tokoId: clientTokoId },
+      select: { id: true },
+    });
+    const ownedCabangIds = ownedCabangs.map((c) => c.id);
+    for (const item of cabangData) {
+      if (!ownedCabangIds.includes(item.cabangId)) {
+        throw new ForbiddenException('Cabang tidak valid untuk toko Anda.');
+      }
+    }
+  }
+
   async create(
     createProdukDto: CreateProdukDto,
     thumbnail: Express.Multer.File,
+    user?: any,
   ) {
-    const { cabangIds, ...data } = createProdukDto;
+    const { cabangData, hashtagIds, ...data } = createProdukDto;
 
-    if (!cabangIds) {
-      throw new Error('cabangIds are required');
+    if (!cabangData) {
+      throw new Error('cabangData is required');
+    }
+
+    const clientTokoId = await this.getTokoIdForUser(user);
+    if (clientTokoId !== null) {
+      createProdukDto.tokoId = clientTokoId;
+      data.tokoId = clientTokoId;
+      await this.validateClientCabang(clientTokoId, cabangData);
     }
 
     let slug = createProdukDto.nama_produk.toLowerCase().replace(/\s/g, '-');
@@ -54,31 +88,44 @@ export class ProdukService {
         slug,
         produkCabangs: {
           createMany: {
-            data: cabangIds.map((id) => ({
-              cabangId: id,
-              status: 'tersedia',
+            data: cabangData.map((item) => ({
+              cabangId: item.cabangId,
+              status: item.status,
             })),
           },
         },
+        hashtags: hashtagIds && hashtagIds.length > 0 ? {
+          createMany: {
+            data: hashtagIds.map((id) => ({
+              hashtagId: id,
+            })),
+          },
+        } : undefined,
       },
     });
 
     return produk;
   }
 
-  async findAll(query: QueryProdukDto) {
+  async findAll(query: QueryProdukDto, user?: any) {
     const { page, limit, search, tokoId, cabangIds, kategoriId, status } =
       query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ProdukWhereInput = {};
 
-    if (search) {
-      where.OR = [{ nama_produk: { contains: search } }];
+    const clientTokoId = await this.getTokoIdForUser(user);
+    if (clientTokoId !== null) {
+      where.tokoId = clientTokoId;
+    } else if (tokoId) {
+      where.tokoId = tokoId;
     }
 
-    if (tokoId) {
-      where.tokoId = tokoId;
+    if (search) {
+      where.OR = [
+        { nama_produk: { contains: search } },
+        { hashtags: { some: { hashtag: { nama: { contains: search } } } } }
+      ];
     }
 
     if (status) {
@@ -111,6 +158,11 @@ export class ProdukService {
             },
           },
           toko: true,
+          hashtags: {
+            include: {
+              hashtag: true,
+            },
+          },
           _count: {
             select: {
               ulasans: true, // Nama relasi ulasan di schema.prisma Anda
@@ -120,7 +172,7 @@ export class ProdukService {
         take: limit,
         orderBy: { id: 'asc' },
       }),
-      this.prismaService.produk.count(),
+      this.prismaService.produk.count({ where }),
     ]);
 
     const formattedData = produk.map((item) => {
@@ -149,7 +201,10 @@ export class ProdukService {
     const where: Prisma.ProdukWhereInput = {};
 
     if (search) {
-      where.OR = [{ nama_produk: { contains: search } }];
+      where.OR = [
+        { nama_produk: { contains: search } },
+        { hashtags: { some: { hashtag: { nama: { contains: search } } } } }
+      ];
     }
 
     if (tokoId) {
@@ -182,15 +237,42 @@ export class ProdukService {
             },
           },
           toko: true,
+          hashtags: {
+            include: {
+              hashtag: true,
+            },
+          },
+          _count: {
+            select: {
+              ulasans: true,
+            },
+          },
         },
         take: limit,
-        orderBy: { id: 'asc' },
+        orderBy: [
+          {
+            ulasans: {
+              _count: 'desc',
+            },
+          },
+          {
+            id: 'desc',
+          },
+        ],
       }),
-      this.prismaService.produk.count(),
+      this.prismaService.produk.count({ where }),
     ]);
 
+    const formattedData = produk.map((item) => {
+      const { _count, ...rest } = item;
+      return {
+        ...rest,
+        totalUlasan: _count?.ulasans || 0,
+      };
+    });
+
     return {
-      data: produk,
+      data: formattedData,
       meta: {
         page,
         limit,
@@ -200,7 +282,7 @@ export class ProdukService {
     };
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, user?: any) {
     const produk = await this.prismaService.produk.findUnique({
       where: { id },
       include: {
@@ -211,11 +293,21 @@ export class ProdukService {
           },
         },
         toko: true,
+        hashtags: {
+          include: {
+            hashtag: true,
+          },
+        },
       },
     });
 
     if (!produk) {
       throw new NotFoundException('Produk tidak ditemukan.');
+    }
+
+    const clientTokoId = await this.getTokoIdForUser(user);
+    if (clientTokoId !== null && produk.tokoId !== clientTokoId) {
+      throw new ForbiddenException('Anda tidak memiliki akses ke produk ini.');
     }
 
     return produk;
@@ -233,6 +325,11 @@ export class ProdukService {
         },
         ulasans: true,
         toko: true,
+        hashtags: {
+          include: {
+            hashtag: true,
+          },
+        },
       },
     });
 
@@ -247,12 +344,22 @@ export class ProdukService {
     id: number,
     UpdateProdukDto: UpdateProdukDto,
     thumbnail: Express.Multer.File,
+    user?: any,
   ) {
-    const produk = await this.findOne(id);
+    const produk = await this.findOne(id, user);
 
-    const { cabangIds, ...data } = UpdateProdukDto;
+    const { cabangData, hashtagIds, ...data } = UpdateProdukDto;
 
     let updateData = { ...data };
+
+    const clientTokoId = await this.getTokoIdForUser(user);
+    if (clientTokoId !== null) {
+      UpdateProdukDto.tokoId = clientTokoId;
+      updateData.tokoId = clientTokoId;
+      if (cabangData !== undefined) {
+        await this.validateClientCabang(clientTokoId, cabangData);
+      }
+    }
 
     if (!data.nama_produk) {
       await this.prismaService.produk.update({
@@ -303,19 +410,15 @@ export class ProdukService {
       }
     }
 
-    if (cabangIds !== undefined) {
+    if (cabangData !== undefined) {
       const existingCabangs = await this.prismaService.produkCabang.findMany({
         where: { produkId: id },
-        select: { cabangId: true },
       });
-      const existingCabangIds = existingCabangs.map((pc) => pc.cabangId);
+      const incomingCabangIds = cabangData.map((cd) => cd.cabangId);
 
-      const toDeleteIds = existingCabangIds.filter(
-        (cabangId) => !cabangIds.includes(cabangId),
-      );
-      const toCreateIds = cabangIds.filter(
-        (cabangId) => !existingCabangIds.includes(cabangId),
-      );
+      const toDeleteIds = existingCabangs
+        .map((pc) => pc.cabangId)
+        .filter((cabangId) => !incomingCabangIds.includes(cabangId));
 
       if (toDeleteIds.length > 0) {
         await this.prismaService.produkCabang.deleteMany({
@@ -326,12 +429,55 @@ export class ProdukService {
         });
       }
 
-      if (toCreateIds.length > 0) {
-        await this.prismaService.produkCabang.createMany({
-          data: toCreateIds.map((cabangId) => ({
+      for (const item of cabangData) {
+        const existing = existingCabangs.find((pc) => pc.cabangId === item.cabangId);
+        if (existing) {
+          if (existing.status !== item.status) {
+            await this.prismaService.produkCabang.update({
+              where: { id: existing.id },
+              data: { status: item.status },
+            });
+          }
+        } else {
+          await this.prismaService.produkCabang.create({
+            data: {
+              produkId: id,
+              cabangId: item.cabangId,
+              status: item.status,
+            },
+          });
+        }
+      }
+    }
+
+    if (hashtagIds !== undefined) {
+      const existingHashtags = await this.prismaService.produkHashtag.findMany({
+        where: { produkId: id },
+        select: { hashtagId: true },
+      });
+      const existingHashtagIds = existingHashtags.map((ph) => ph.hashtagId);
+
+      const toDeleteIds = existingHashtagIds.filter(
+        (hashtagId) => !hashtagIds.includes(hashtagId),
+      );
+      const toCreateIds = hashtagIds.filter(
+        (hashtagId) => !existingHashtagIds.includes(hashtagId),
+      );
+
+      if (toDeleteIds.length > 0) {
+        await this.prismaService.produkHashtag.deleteMany({
+          where: {
             produkId: id,
-            cabangId: cabangId,
-            status: 'tersedia',
+            hashtagId: { in: toDeleteIds },
+          },
+        });
+      }
+
+      if (toCreateIds.length > 0) {
+        await this.prismaService.produkHashtag.createMany({
+          data: toCreateIds.map((hashtagId) => ({
+            produkId: id,
+            hashtagId: hashtagId,
           })),
         });
       }
@@ -346,8 +492,8 @@ export class ProdukService {
     });
   }
 
-  async remove(id: number) {
-    const produk = await this.findOne(id);
+  async remove(id: number, user?: any) {
+    await this.findOne(id, user);
 
     await this.prismaService.produk.delete({
       where: { id },

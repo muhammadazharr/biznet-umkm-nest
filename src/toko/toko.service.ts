@@ -180,6 +180,14 @@ export class TokoService {
             include: { kategori: true },
           },
         },
+        orderBy: [
+          {
+            rating: 'desc',
+          },
+          {
+            id: 'desc',
+          },
+        ],
       }),
 
       this.prismaService.toko.count({ where }),

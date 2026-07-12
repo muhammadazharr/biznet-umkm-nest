@@ -21,7 +21,7 @@ export class UlasanService {
   }
 
   async findAll(query: QueryUlasanDto) {
-    const { page, limit, search, produkId, tokoId } = query; // Destructure semua properti
+    const { page, limit, search, produkId, tokoId, status, nilai } = query; // Destructure semua properti
     const skip = (page - 1) * limit;
 
     const where: Prisma.UlasanWhereInput = {};
@@ -40,6 +40,14 @@ export class UlasanService {
       where.produk = {
         tokoId,
       };
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (nilai) {
+      where.nilai = nilai;
     }
 
     const [ulasan, total] = await this.prismaService.$transaction([

@@ -85,7 +85,7 @@ export class TokoController {
 
   @Patch(':id')
   async update(@Param('id') id: string, @Body() UpdateTokoDto: UpdateTokoDto) {
-    this.tokoService.update(+id, UpdateTokoDto);
+    await this.tokoService.update(+id, UpdateTokoDto);
     return ApiResponse.success('Data berhasil diperbarui');
   }
 
@@ -104,7 +104,7 @@ export class TokoController {
     @Body() UpdateTokoDto: UpdateTokoClientDto,
     @UploadedFile() logo?: Express.Multer.File,
   ) {
-    this.tokoService.updateClient(+id, UpdateTokoDto, logo);
+    await this.tokoService.updateClient(+id, UpdateTokoDto, logo);
     return ApiResponse.success('Data berhasil diperbarui');
   }
 
@@ -112,7 +112,7 @@ export class TokoController {
   @ApiBearerAuth('JWT-auth')
   @Delete(':id')
   async remove(@Param('id') id: string) {
-    this.tokoService.remove(+id);
+    await this.tokoService.remove(+id);
     return ApiResponse.success('Data toko berhasil dihapus');
   }
 }
